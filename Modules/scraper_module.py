@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import re
 from PyQt5.QtCore import QObject, pyqtSignal
-import helping_functions as hf
+import Modules.helping_functions as hf
 
 
 class Scraper(QObject):

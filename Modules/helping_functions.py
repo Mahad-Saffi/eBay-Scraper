@@ -1,7 +1,7 @@
 import re
 import os
 import pandas as pd
-import variables as var
+import Modules.variables as var
 
 # Function to parse price and handle price range
 def parse_price(price_text):

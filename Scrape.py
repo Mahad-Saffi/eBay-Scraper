@@ -4,11 +4,11 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QLabel, QLi
                              QPushButton, QProgressBar, QComboBox, QTableWidget, QTableWidgetItem, 
                              QCheckBox, QWidget, QGridLayout, QHBoxLayout)
 from PyQt5.QtCore import pyqtSignal
-from scraper_module import Scraper
-from sorting_alogrithms import SortingAlgorithms
-from searching_algorithms import SearchingAlgorithms
-import variables as var
-import helping_functions as hf
+from Modules.scraper_module import Scraper
+from Algorithms.sorting_alogrithms import SortingAlgorithms
+from Algorithms.searching_algorithms import SearchingAlgorithms
+import Modules.variables as var
+import Modules.helping_functions as hf
 import os
 
 
