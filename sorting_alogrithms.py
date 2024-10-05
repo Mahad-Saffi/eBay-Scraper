@@ -120,71 +120,206 @@ class SortingAlgorithms:
         self.data[i + 1], self.data[high] = self.data[high], self.data[i + 1]
         return i + 1
 
-    # Counting Sort
     def counting_sort(self, key):
-        max_val = max(item[key] for item in self.data)
-        count = [0] * (max_val + 1)
-        output = [None] * len(self.data)
+        # Check if the data is numeric
+        if all(isinstance(item[key], (int, float)) for item in self.data):
+            # Handle numeric data
+            values = [int(item[key]) for item in self.data]  # Convert to int
+            max_val = max(values)  # Find the maximum numeric value
+            count = [0] * (max_val + 1)
+            output = [None] * len(self.data)
 
-        for item in self.data:
-            count[item[key]] += 1
+            # Count occurrences of each value
+            for value in values:
+                count[value] += 1
 
-        for i in range(1, len(count)):
-            count[i] += count[i - 1]
+            # Update the count array to hold the actual position
+            for i in range(1, len(count)):
+                count[i] += count[i - 1]
 
-        for item in reversed(self.data):
-            output[count[item[key]] - 1] = item
-            count[item[key]] -= 1
+            # Build the output array
+            for i in reversed(range(len(values))):
+                output[count[values[i]] - 1] = self.data[i]
+                count[values[i]] -= 1
 
-        self.data = output
+        else:
+            # Handle string data (use the existing implementation for strings)
+            max_char = 256  # ASCII range
+            count = [0] * max_char
+            output = [None] * len(self.data)
+
+            # Count occurrences of each character (first char of each string)
+            for item in self.data:
+                count[ord(item[key][0])] += 1
+
+            # Update the count array to hold the actual position
+            for i in range(1, max_char):
+                count[i] += count[i - 1]
+
+            # Build the output array
+            for item in reversed(self.data):
+                char_index = ord(item[key][0])
+                output[count[char_index] - 1] = item
+                count[char_index] -= 1
+
+        # Copy the sorted values back to self.data
+        self.data[:] = output  # Update the original data
         return self.data
 
     # Radix Sort
     def radix_sort(self, key):
-        max_val = max(item[key] for item in self.data)
-        exp = 1
-        while max_val // exp > 0:
-            self.counting_sort_radix(key, exp)
-            exp *= 10
+        if all(isinstance(item[key], (int, float)) for item in self.data):
+            max_val = max(int(item[key]) for item in self.data)
+            exp = 1
+            while max_val // exp > 0:
+                self.counting_sort_radix(key, exp)
+                exp *= 10
+        else:
+            # For string data, use the existing radix sort logic
+            max_length = max(len(item[key]) for item in self.data)
+            for exp in range(max_length - 1, -1, -1):
+                self.counting_sort_radix(key, exp)
         return self.data
 
     def counting_sort_radix(self, key, exp):
-        n = len(self.data)
-        output = [None] * n
-        count = [0] * 10
+        if all(isinstance(item[key], (int, float)) for item in self.data):
+            # Numeric data handling
+            n = len(self.data)
+            output = [None] * n
+            count = [0] * 10  # Base 10 for digits
 
-        for item in self.data:
-            index = (item[key] // exp) % 10
-            count[index] += 1
+            for item in self.data:
+                index = (int(item[key]) // exp) % 10
+                count[index] += 1
 
-        for i in range(1, 10):
-            count[i] += count[i - 1]
+            for i in range(1, 10):
+                count[i] += count[i - 1]
 
-        for i in reversed(range(n)):
-            index = (self.data[i][key] // exp) % 10
-            output[count[index] - 1] = self.data[i]
-            count[index] -= 1
+            for i in reversed(range(n)):
+                index = (int(self.data[i][key]) // exp) % 10
+                output[count[index] - 1] = self.data[i]
+                count[index] -= 1
 
-        self.data = output
+        else:
+            # String data handling (existing implementation)
+            n = len(self.data)
+            output = [None] * n
+            count = [0] * 256  # ASCII range
 
-    # Bucket Sort
+            for item in self.data:
+                index = ord(item[key][exp]) if exp < len(item[key]) else 0
+                count[index] += 1
+
+            for i in range(1, 256):
+                count[i] += count[i - 1]
+
+            for i in reversed(range(n)):
+                index = ord(self.data[i][key][exp]) if exp < len(self.data[i][key]) else 0
+                output[count[index] - 1] = self.data[i]
+                count[index] -= 1
+
+        self.data[:] = output
+
+
     def bucket_sort(self, key):
         if not self.data:
             return []
 
-        max_val = max(item[key] for item in self.data)
-        bucket_count = len(self.data) // 10 + 1
-        buckets = [[] for _ in range(bucket_count)]
+        if all(isinstance(item[key], (int, float)) for item in self.data):
+            # Numeric bucket sort
+            values = [int(item[key]) for item in self.data]
+            max_val = max(values)
+            bucket_count = len(self.data) // 10 + 1
+            buckets = [[] for _ in range(bucket_count)]
 
-        for item in self.data:
-            index = (item[key] * bucket_count) // (max_val + 1)
-            buckets[index].append(item)
+            for item in self.data:
+                index = int(item[key]) * bucket_count // (max_val + 1)
+                buckets[index].append(item)
 
-        for bucket in buckets:
-            bucket.sort(key=lambda x: x[key])
+            sorted_data = []
+            for bucket in buckets:
+                sorted_data.extend(sorted(bucket, key=lambda x: int(x[key])))
 
-        self.data = [item for bucket in buckets for item in bucket]
+        else:
+            # String bucket sort (use the existing implementation for strings)
+            max_char = 256  # ASCII range
+            bucket_count = max_char
+
+            # Create buckets
+            buckets = [[] for _ in range(bucket_count)]
+
+            # Place items into buckets based on the first character of the key
+            for item in self.data:
+                index = ord(item[key][0])
+                buckets[index].append(item)
+
+            sorted_data = []
+            for bucket in buckets:
+                sorted_data.extend(sorted(bucket, key=lambda x: x[key]))
+
+        self.data[:] = sorted_data
         return self.data
+    
+    # Heap Sort
+    def heap_sort(self, key):
+        n = len(self.data)
+
+        # Build a maxheap
+        for i in range(n // 2 - 1, -1, -1):
+            self.heapify(n, i, key)
+
+        # Extract elements one by one
+        for i in range(n - 1, 0, -1):
+            self.data[i], self.data[0] = self.data[0], self.data[i]  # Swap
+            self.heapify(i, 0, key)
+
+        return self.data
+
+    def heapify(self, n, i, key):
+        largest = i  # Initialize largest as root
+        left = 2 * i + 1  # Left child
+        right = 2 * i + 2  # Right child
+
+        # Check if left child exists and is greater than root
+        if left < n and self.data[left][key] > self.data[largest][key]:
+            largest = left
+
+        # Check if right child exists and is greater than the largest so far
+        if right < n and self.data[right][key] > self.data[largest][key]:
+            largest = right
+
+        # If largest is not root, swap and continue heapifying
+        if largest != i:
+            self.data[i], self.data[largest] = self.data[largest], self.data[i]
+            self.heapify(n, largest, key)
+            
+    
+    # Comb Sort
+    def comb_sort(self, key):
+        n = len(self.data)
+        gap = n
+        shrink = 1.3  # Common shrink factor
+        sorted = False
+
+        while not sorted:
+            # Update the gap for the next iteration
+            gap = int(gap / shrink)
+            if gap <= 1:
+                gap = 1
+                sorted = True
+
+            # Perform a "bubble sort" pass with the current gap
+            i = 0
+            while i + gap < n:
+                if self.data[i][key] > self.data[i + gap][key]:
+                    self.data[i], self.data[i + gap] = self.data[i + gap], self.data[i]
+                    sorted = False
+                i += 1
+
+        return self.data
+
+
+
 
     # General method to sort based on the selected algorithm
     def sort_data(self, algo, column):
@@ -211,6 +346,10 @@ class SortingAlgorithms:
             return self.radix_sort(key)
         elif algo == "Bucket Sort":
             return self.bucket_sort(key)
+        elif algo == "Heap Sort":
+            return self.heap_sort(key)
+        elif algo == "Comb Sort":
+            return self.comb_sort(key)
         else:
             # Default case or for other algorithms
             return self.data

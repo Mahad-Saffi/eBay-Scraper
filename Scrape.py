@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QLabel, QLi
 from PyQt5.QtCore import pyqtSignal
 from scraper_module import Scraper
 from sorting_alogrithms import SortingAlgorithms
+from searching_algorithms import SearchingAlgorithms
 import variables as var
 import helping_functions as hf
 import os
@@ -204,6 +205,7 @@ class ScraperUI(QMainWindow):
 
     def display_data(self, data):
         if not data:
+            self.table.clearContents()
             return
 
         # Define the desired column order
@@ -217,7 +219,7 @@ class ScraperUI(QMainWindow):
 
         # Set the row count based on the data length
         self.table.setRowCount(len(data))
-
+        
         # Populate the table with data according to the defined column order
         for row_idx, row_data in enumerate(data):
             for col_idx, header in enumerate(column_order):
@@ -233,21 +235,29 @@ class ScraperUI(QMainWindow):
             self.status_label.setText("Status: No data found in existing CSV files")
 
     def sort_data(self):
-        selected_algo = self.sort_algo_dropdown.currentText()
-        selected_column = self.sort_column_dropdown.currentText()
-        
-        sorting = SortingAlgorithms(hf.load_data_from_csv())
-        sorted_data = sorting.sort_data(selected_algo, selected_column)
-        self.display_data(sorted_data)
+        try:
+            selected_algo = self.sort_algo_dropdown.currentText()
+            selected_column = self.sort_column_dropdown.currentText()
+            
+            sorting = SortingAlgorithms(hf.load_data_from_csv())
+            sorted_data = sorting.sort_data(selected_algo, selected_column)
+            self.display_data(sorted_data)
+        except Exception as e:
+            self.status_label.setText(f"Status: Invalid column or sorting algorithm")
 
     def search_data(self):
-        search_term = self.search_input.text()
-        selected_algo = self.search_algo_dropdown.currentText()
-        selected_column = self.search_column_dropdown.currentText()
-        filter_option = self.filter_dropdown.currentText()
+        try:
+            search_term = self.search_input.text()
+            selected_algo = self.search_algo_dropdown.currentText().lower()
+            selected_column = self.search_column_dropdown.currentText().lower()
+            filter_option = self.filter_dropdown.currentText().lower()
+            
+            searching = SearchingAlgorithms(hf.load_data_from_csv())
 
-        result = self.scraper.search_data(search_term, selected_algo, selected_column, filter_option)
-        self.display_data(result)
+            result = searching.search_data(selected_column, search_term, selected_algo, filter_option)
+            self.display_data(result)
+        except Exception as e:
+            self.status_label.setText(f"Status: Invalid search term or column or Data: {e}")
 
 
 if __name__ == "__main__":
