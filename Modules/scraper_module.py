@@ -143,6 +143,7 @@ class Scraper(QObject):
             self.page_no += 1
 
         self.delete_html_files()  # Ensure only called once at the end
+        self.stop()
         if self.driver:
             self.driver.quit()
         all_data = hf.concatenate_csv_files(self.directory)

@@ -2,14 +2,14 @@ import sys
 import threading
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QLabel, QLineEdit, 
                              QPushButton, QProgressBar, QComboBox, QTableWidget, QTableWidgetItem, 
-                             QCheckBox, QWidget, QGridLayout, QHBoxLayout)
+                             QWidget, QHBoxLayout)
 from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtGui import QIcon
 from Modules.scraper_module import Scraper
 from Algorithms.sorting_alogrithms import SortingAlgorithms
 from Algorithms.searching_algorithms import SearchingAlgorithms
 import Modules.variables as var
 import Modules.helping_functions as hf
-import os
 
 
 class ScraperUI(QMainWindow):
@@ -20,7 +20,8 @@ class ScraperUI(QMainWindow):
     def __init__(self):
         super().__init__()
         self.Attributes = ["Title", "Upper Price", "Lower Price", "Link", "Image Url", "Condition", "Shipping", "Location"]
-        self.setWindowTitle("Web Scraper")
+        self.setWindowTitle("eBay Scraper")
+        self.setWindowIcon(QIcon(var.ICON_PATH))
         self.setGeometry(300, 300, 800, 800)
 
         # Initialize the scraper
@@ -113,6 +114,8 @@ class ScraperUI(QMainWindow):
         layout.addWidget(self.table)
         self.display_data_button = QPushButton("Display Data")
         layout.addWidget(self.display_data_button)
+        self.time_taken_label = QLabel("Time Taken: ")
+        layout.addWidget(self.time_taken_label)
 
         # Set up button actions
         self.start_button.clicked.connect(self.start_scraping)
@@ -240,7 +243,8 @@ class ScraperUI(QMainWindow):
             selected_column = self.sort_column_dropdown.currentText()
             
             sorting = SortingAlgorithms(hf.load_data_from_csv())
-            sorted_data = sorting.sort_data(selected_algo, selected_column)
+            sorted_data, total_time_taken = sorting.sort_data(selected_algo, selected_column)
+            self.time_taken_label.setText(f"Time Taken: {total_time_taken} milliseconds")
             self.display_data(sorted_data)
         except Exception as e:
             self.status_label.setText(f"Status: Invalid column or sorting algorithm")

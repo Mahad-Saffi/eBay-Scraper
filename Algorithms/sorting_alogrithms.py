@@ -1,18 +1,24 @@
+from time import time
 class SortingAlgorithms:
     def __init__(self, data):
         self.data = data
 
     # Bubble Sort
     def bubble_sort(self, key):
+        starting_time = time() * 1000
         n = len(self.data)
         for i in range(n):
             for j in range(0, n - i - 1):
                 if self.data[j][key] > self.data[j + 1][key]:
                     self.data[j], self.data[j + 1] = self.data[j + 1], self.data[j]
-        return self.data
+        ending_time = time() * 1000
+        
+        total_time = ending_time - starting_time
+        return self.data, total_time
 
     # Selection Sort
     def selection_sort(self, key):
+        starting_time = time() * 1000
         n = len(self.data)
         for i in range(n):
             min_idx = i
@@ -20,10 +26,14 @@ class SortingAlgorithms:
                 if self.data[j][key] < self.data[min_idx][key]:
                     min_idx = j
             self.data[i], self.data[min_idx] = self.data[min_idx], self.data[i]
-        return self.data
+        ending_time = time() * 1000
+        
+        total_time = ending_time - starting_time
+        return self.data, total_time
 
     # Insertion Sort
     def insertion_sort(self, key):
+        starting_time = time() * 1000
         for i in range(1, len(self.data)):
             key_item = self.data[i]
             j = i - 1
@@ -31,10 +41,14 @@ class SortingAlgorithms:
                 self.data[j + 1] = self.data[j]
                 j -= 1
             self.data[j + 1] = key_item
-        return self.data
+        ending_time = time() * 1000
+        
+        total_time = ending_time - starting_time
+        return self.data, total_time
 
     # Merge Sort
     def merge_sort(self, key):
+        starting_time = time() * 1000
         if len(self.data) > 1:
             mid = len(self.data) // 2
             left_half = self.data[:mid]
@@ -64,8 +78,10 @@ class SortingAlgorithms:
                 self.data[k] = right_half[j]
                 j += 1
                 k += 1
-
-        return self.data
+        ending_time = time() * 1000
+        
+        total_time = ending_time - starting_time
+        return self.data, total_time
 
     def merge_sort_helper(self, data, key):
         if len(data) > 1:
@@ -100,8 +116,12 @@ class SortingAlgorithms:
 
     # Quick Sort
     def quick_sort(self, key):
+        starting_time = time() * 1000
         self.quick_sort_helper(0, len(self.data) - 1, key)
-        return self.data
+        ending_time = time() * 1000
+        
+        total_time = ending_time - starting_time
+        return self.data, total_time
 
     def quick_sort_helper(self, low, high, key):
         if low < high:
@@ -121,6 +141,7 @@ class SortingAlgorithms:
         return i + 1
 
     def counting_sort(self, key):
+        starting_time = time() * 1000
         # Check if the data is numeric
         if all(isinstance(item[key], (int, float)) for item in self.data):
             # Handle numeric data
@@ -164,10 +185,14 @@ class SortingAlgorithms:
 
         # Copy the sorted values back to self.data
         self.data[:] = output  # Update the original data
-        return self.data
+        ending_time = time() * 1000
+        
+        total_time = ending_time - starting_time
+        return self.data, total_time
 
     # Radix Sort
     def radix_sort(self, key):
+        starting_time = time() * 1000
         if all(isinstance(item[key], (int, float)) for item in self.data):
             max_val = max(int(item[key]) for item in self.data)
             exp = 1
@@ -179,7 +204,10 @@ class SortingAlgorithms:
             max_length = max(len(item[key]) for item in self.data)
             for exp in range(max_length - 1, -1, -1):
                 self.counting_sort_radix(key, exp)
-        return self.data
+        ending_time = time() * 1000
+        
+        total_time = ending_time - starting_time
+        return self.data, total_time
 
     def counting_sort_radix(self, key, exp):
         if all(isinstance(item[key], (int, float)) for item in self.data):
@@ -222,6 +250,7 @@ class SortingAlgorithms:
 
 
     def bucket_sort(self, key):
+        starting_time = time() * 1000
         if not self.data:
             return []
 
@@ -258,10 +287,14 @@ class SortingAlgorithms:
                 sorted_data.extend(sorted(bucket, key=lambda x: x[key]))
 
         self.data[:] = sorted_data
-        return self.data
+        ending_time = time() * 1000
+        
+        total_time = ending_time - starting_time
+        return self.data, total_time
     
     # Heap Sort
     def heap_sort(self, key):
+        starting_time = time() * 1000
         n = len(self.data)
 
         # Build a maxheap
@@ -272,8 +305,10 @@ class SortingAlgorithms:
         for i in range(n - 1, 0, -1):
             self.data[i], self.data[0] = self.data[0], self.data[i]  # Swap
             self.heapify(i, 0, key)
-
-        return self.data
+        ending_time = time() * 1000
+        
+        total_time = ending_time - starting_time
+        return self.data, total_time
 
     def heapify(self, n, i, key):
         largest = i  # Initialize largest as root
@@ -296,6 +331,7 @@ class SortingAlgorithms:
     
     # Comb Sort
     def comb_sort(self, key):
+        starting_time = time() * 1000
         n = len(self.data)
         gap = n
         shrink = 1.3  # Common shrink factor
@@ -315,8 +351,10 @@ class SortingAlgorithms:
                     self.data[i], self.data[i + gap] = self.data[i + gap], self.data[i]
                     sorted = False
                 i += 1
-
-        return self.data
+        ending_time = time() * 1000
+        
+        total_time = ending_time - starting_time
+        return self.data, total_time
 
 
 
