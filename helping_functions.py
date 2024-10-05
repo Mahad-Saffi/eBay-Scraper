@@ -1,6 +1,7 @@
 import re
 import os
 import pandas as pd
+import variables as var
 
 # Function to parse price and handle price range
 def parse_price(price_text):
@@ -45,13 +46,13 @@ def increment_page_no(url):
 
 
 # This functions gets the data from data folder
-def concatenate_csv_files(self):
+def concatenate_csv_files(directory):
     concatenated_data = []
     # Define the standard header order
     headers_order = ["title", "upper_price", "lower_price", "link", "image_url", "condition", "shipping", "location"]  # Add all relevant headers in the desired order
 
     # Traverse the main data directory
-    for root, dirs, files in os.walk("data"):  # Adjust if your base directory is different
+    for root, dirs, files in os.walk(directory):
         for file in files:
             if file == "data.csv":
                 file_path = os.path.join(root, file)
@@ -66,3 +67,18 @@ def concatenate_csv_files(self):
         combined_df = pd.concat(concatenated_data, ignore_index=True)
         return combined_df.to_dict(orient='records')  # Convert to list of dictionaries for easier display
     return []
+
+
+def load_data_from_csv():
+    directory = var.DIRECTORY
+    try:
+        if os.path.exists(directory):
+            data = concatenate_csv_files(directory)
+            print("Loaded existing data from CSV files.")
+            return data
+        else:
+            print("No CSV files found in the directory.")
+            return None
+    except Exception as e:
+        print(f"Error loading data from CSV: {e}")
+        return None
