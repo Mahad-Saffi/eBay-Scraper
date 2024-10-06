@@ -97,7 +97,7 @@ To run this project, you need the following:
 
 Here's an example of how the UI looks:
 
-![UI Example](resources/ui_example.png)
+![UI Example](https://github.com/user-attachments/assets/40153aea-a9bd-4394-be9b-e2243e19b8f7)
 
 ## Contributing
 
