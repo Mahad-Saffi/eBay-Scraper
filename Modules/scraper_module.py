@@ -6,8 +6,8 @@ from selenium.webdriver.common.by import By
 from selenium import webdriver
 from bs4 import BeautifulSoup
 import pandas as pd
-import re
 from PyQt5.QtCore import QObject, pyqtSignal
+import Modules.variables as var
 import Modules.helping_functions as hf
 
 
@@ -15,19 +15,21 @@ class Scraper(QObject):
     # Define signals
     update_progress_signal = pyqtSignal(int)
     display_data_signal = pyqtSignal(list)
+    update_button_signal = pyqtSignal(bool, bool, bool, bool)
+    update_status_signal = pyqtSignal(str)
     
-    url = "https://www.ebay.com/sch/i.html?_from=R40&_nkw=shoes&_sacat=0&_pgn=1"
+    # ````````````````````````````````INITIALIZATION````````````````````````````````````
 
-    def __init__(self, query=url, max_items=25000):
+    def __init__(self, query=var.DEFAULT_URL, max_items=var.DEFAULT_MAX_ITEMS):
         super().__init__()
         self.query = query
-        self.directory = f"data/{hf.get_item_name(query)}_{time.strftime('%Y%m%d_%H%M%S')}"
+        self.directory = var.getDirectory(query)
         self.page_no = 1
         self.total_items = 0
         self.max_items = max_items
         self.paused = False
         self.stopped = False
-        self.stop_before_scraped_items = 6
+        self.stop_before_scraped_items = var.STOPPING_SCRAPE_BEFORE_MIN_ITEMS
         self.lock = threading.Lock()
         self.driver = None
 
@@ -36,12 +38,23 @@ class Scraper(QObject):
             os.makedirs(self.directory)
 
     def initialize_driver(self):
-        """Initialize the Chrome driver."""
         service = Service('C:/chromedriver-win64/chromedriver.exe')
         options = webdriver.ChromeOptions()
-        options.add_argument("--headless")  # Ensure GUI is off
+        options.add_argument("--headless=new")  # Using the newer headless mode
+        options.add_argument("--disable-gpu")  # Disable GPU acceleration to avoid related issues
+        options.add_argument("--no-sandbox")  # Bypass OS security model
+        options.add_argument("--disable-dev-shm-usage")  # Overcome limited resource problems
+        options.add_argument("--disable-popup-blocking")  # Disable popup blocking
+        options.add_argument("--window-size=800,800")  # Set a fixed window size for consistency
+        options.add_argument("--disable-notifications")  # Disable notifications
         self.driver = webdriver.Chrome(service=service, options=options)
         
+        
+        
+        
+        
+    # ``````````````````````````````````SCRAPING````````````````````````````````````````````
+    
     def save_page_html(self):
         try:
             self.initialize_driver()
@@ -57,10 +70,12 @@ class Scraper(QObject):
             with open(f"{self.directory}/page_{self.page_no}.html", "w", encoding="utf-8") as file:
                 file.write(full_page_html)
             print(f"Page {self.page_no}: Fetched {len(elements)} items.")
+            self.update_status_signal.emit(f"Page {self.page_no}: Fetched {len(elements)} items.")
             
             return len(elements)
         except Exception as e:
             print(f"Error fetching page {self.page_no}: {e}")
+            self.update_status_signal.emit(f"Error fetching page {self.page_no}: {e}")
             return 0
 
     def extract_data_from_html(self, page_no):
@@ -100,6 +115,7 @@ class Scraper(QObject):
                 })
         except Exception as e:
             print(f"Error extracting data from page {page_no}: {e}")
+            self.update_status_signal.emit(f"Error extracting data from page {page_no}: {e}")
         return data
 
     def save_data_to_csv(self, data):
@@ -110,6 +126,7 @@ class Scraper(QObject):
         else:
             df.to_csv(output_file, index=False)  # Create new file if it doesn't exist
         print("Data saved successfully!")
+        self.update_status_signal.emit("Data saved successfully!")
 
     def delete_html_files(self):
         for filename in os.listdir(self.directory):
@@ -134,13 +151,13 @@ class Scraper(QObject):
             all_data.extend(data)
             self.save_data_to_csv(data)
 
-            progress_percentage = int((self.total_items / self.max_items) * 100)
+            progress_percentage = 100 if int((self.total_items / self.max_items) * 100) > 100 else int((self.total_items / self.max_items) * 100)
             self.update_progress_signal.emit(progress_percentage)
 
+            self.page_no += 1
+            
             if self.total_items >= self.max_items:
                 break
-
-            self.page_no += 1
 
         self.delete_html_files()  # Ensure only called once at the end
         self.stop()
@@ -149,24 +166,36 @@ class Scraper(QObject):
         all_data = hf.concatenate_csv_files(self.directory)
         self.display_data_signal.emit(all_data)
 
+
+
+
+    # ``````````````````````````````````CONTROL FUNCTIONS````````````````````````````
+    
     def pause(self):
         with self.lock:
             self.paused = True
-        print("Scraping will be paused...")
+        print("Scraping paused...")
+        self.update_status_signal.emit("Scraping paused...")
+        self.update_button_signal.emit(False, False, True, True)
 
     def resume(self):
         with self.lock:
             self.paused = False
-        print("Scraping will be resumed...")
+        print("Scraping resumed...")
+        self.update_status_signal.emit("Scraping resumed...")
+        self.update_button_signal.emit(False, True, False, True)
 
     def stop(self):
         with self.lock:
             if not self.stopped:
                 self.stopped = True
+                self.update_progress_signal.emit(0)
                 print(f"Stopping scraper. Current total items: {self.total_items}")
+                self.update_status_signal.emit(f"Scraping stopped || Total items Scraped: {self.total_items}")
+                self.update_button_signal.emit(True, False, False, False)
+                
                 if self.driver:
-                    self.driver.quit()
-                print("Scraping will be stopped...")
-
+                    self.close()
+                
     def close(self):
         self.driver.quit()

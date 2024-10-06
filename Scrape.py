@@ -16,10 +16,14 @@ class ScraperUI(QMainWindow):
     # Define signals
     update_progress_signal = pyqtSignal(int)
     display_data_signal = pyqtSignal(list)
+    update_button_signal = pyqtSignal(bool, bool, bool, bool)
+    update_status_signal = pyqtSignal(str)
+    
+    
+    # `````````````````````````````INITIALIZATION``````````````````````````````````
     
     def __init__(self):
         super().__init__()
-        self.Attributes = ["Title", "Upper Price", "Lower Price", "Link", "Image Url", "Condition", "Shipping", "Location"]
         self.setWindowTitle("eBay Scraper")
         self.setWindowIcon(QIcon(var.ICON_PATH))
         self.setGeometry(300, 300, 800, 800)
@@ -80,7 +84,7 @@ class ScraperUI(QMainWindow):
         self.sort_algo_dropdown.addItems(var.SORTING_ALGORITHMS)
         self.sort_column_label = QLabel("Select Column for Sorting:")
         self.sort_column_dropdown = QComboBox()
-        self.sort_column_dropdown.addItems(self.Attributes)
+        self.sort_column_dropdown.addItems(var.ATTRIBUTES)
         layout.addWidget(self.sort_algo_label)
         layout.addWidget(self.sort_algo_dropdown)
         layout.addWidget(self.sort_column_label)
@@ -94,10 +98,10 @@ class ScraperUI(QMainWindow):
         self.search_algo_dropdown.addItems(var.SEARCHING_ALGORITHMS)
         self.search_column_label = QLabel("Select Column for Searching:")
         self.search_column_dropdown = QComboBox()
-        self.search_column_dropdown.addItems(self.Attributes)
+        self.search_column_dropdown.addItems(var.ATTRIBUTES)
         self.search_input = QLineEdit("Enter Search Term")
         self.filter_dropdown = QComboBox()
-        self.filter_dropdown.addItems(["Contains", "Starts With", "Ends With"])
+        self.filter_dropdown.addItems(var.FILTER_OPTIONS)
         layout.addWidget(self.search_algo_label)
         layout.addWidget(self.search_algo_dropdown)
         layout.addWidget(self.search_column_label)
@@ -109,13 +113,15 @@ class ScraperUI(QMainWindow):
 
         # Table to display scraped data
         self.table = QTableWidget()
-        self.table.setColumnCount(7)  # Assuming 7 attributes per entity
-        self.table.setHorizontalHeaderLabels(self.Attributes)
+        self.table.setColumnCount(len(var.ATTRIBUTES))
+        self.table.setHorizontalHeaderLabels(var.ATTRIBUTES)
         layout.addWidget(self.table)
         self.display_data_button = QPushButton("Display Data")
         layout.addWidget(self.display_data_button)
         self.time_taken_label = QLabel("Time Taken: ")
+        self.lower_status_label = QLabel("Status: ")
         layout.addWidget(self.time_taken_label)
+        layout.addWidget(self.lower_status_label)
 
         # Set up button actions
         self.start_button.clicked.connect(self.start_scraping)
@@ -133,7 +139,14 @@ class ScraperUI(QMainWindow):
         
         self.update_progress_signal.connect(self.update_progress)
         self.display_data_signal.connect(self.display_data)
+        self.update_button_signal.connect(self.update_buttons)
+        self.update_status_signal.connect(self.update_status)
 
+
+
+
+    # `````````````````````````````SCRAPING```````````````````````````````
+    
     def start_scraping(self):
         self.progress_bar.setValue(0)
         
@@ -156,6 +169,8 @@ class ScraperUI(QMainWindow):
         self.scraper = Scraper(query=self.query, max_items=max_items)
         self.scraper.update_progress_signal.connect(self.update_progress_signal.emit)
         self.scraper.display_data_signal.connect(self.display_data_signal.emit)
+        self.scraper.update_button_signal.connect(self.update_button_signal.emit)
+        self.scraper.update_status_signal.connect(self.update_status_signal.emit)
 
         # Start the scraper in a separate thread using threading
         threading.Thread(target=self.run_scraper).start()
@@ -192,12 +207,24 @@ class ScraperUI(QMainWindow):
             self.pause_button.setEnabled(False)
             self.resume_button.setEnabled(False)
             self.stop_button.setEnabled(False)
+            
+      
+      
+            
+    # `````````````````````````````UPDATE UI COMPONENTS````````````````````````````````
+    
+    def update_status(self, status):
+        self.lower_status_label.setText(f"Status: {status}")
+            
+    def update_buttons(self, start_button, pause_button, resume_button, stop_button):
+        self.start_button.setEnabled(start_button)
+        self.pause_button.setEnabled(pause_button)
+        self.resume_button.setEnabled(resume_button)
+        self.stop_button.setEnabled(stop_button)
 
     def update_progress(self, progress):
-        max_items = int(self.max_items_input.text()) if self.max_items_input.text().isdigit() else 25000
-        percentage = (progress / max_items) * 100
-        self.progress_bar.setValue(int(percentage))
-        if percentage >= 100:
+        self.progress_bar.setValue(int(progress))
+        if progress >= 100:
             self.status_label.setText("Status: Completed")
             self.progress_bar.setValue(100)
             self.scraper.stop()
@@ -206,13 +233,19 @@ class ScraperUI(QMainWindow):
             self.resume_button.setEnabled(False)
             self.stop_button.setEnabled(False)
 
+
+
+
+    
+    # ````````````````````````````DISPLAY DATA```````````````````````````````
+    
     def display_data(self, data):
         if not data:
             self.table.clearContents()
             return
 
         # Define the desired column order
-        column_order = ["title", "upper_price", "lower_price", "link", "image_url", "condition", "shipping", "location"]
+        column_order = [att.lower().replace(" ", "_") for att in var.ATTRIBUTES]
 
         # Set the column count based on the number of desired columns
         self.table.setColumnCount(len(column_order))
@@ -237,6 +270,11 @@ class ScraperUI(QMainWindow):
         else:
             self.status_label.setText("Status: No data found in existing CSV files")
 
+
+
+
+
+    # ````````````````````````````````SORTING AND SEARCHING````````````````````````````
     def sort_data(self):
         try:
             selected_algo = self.sort_algo_dropdown.currentText()
@@ -262,6 +300,7 @@ class ScraperUI(QMainWindow):
             self.display_data(result)
         except Exception as e:
             self.status_label.setText(f"Status: Invalid search term or column or Data: {e}")
+
 
 
 if __name__ == "__main__":
