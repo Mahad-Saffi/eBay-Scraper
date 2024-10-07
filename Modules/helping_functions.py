@@ -13,6 +13,7 @@ def parse_price(price_text):
         return lower_price, upper_price
     return None, None
 
+# Formatting the shipping text
 def classify_shipping(shipping_text):
     if "Free" in shipping_text:
         return "Free International Shipping"
@@ -47,26 +48,30 @@ def increment_page_no(url):
 
 # This functions gets the data from data folder
 def concatenate_csv_files(directory):
-    concatenated_data = []
-    # Define the standard header order
-    headers_order = ["title", "upper_price", "lower_price", "link", "image_url", "condition", "shipping", "location"]  # Add all relevant headers in the desired order
+    try:
+        concatenated_data = []
+        # Define the standard header order
+        headers_order = [att.lower().replace(" ", "_") for att in var.ATTRIBUTES]  # Add all relevant headers in the desired order
 
-    # Traverse the main data directory
-    for root, dirs, files in os.walk(directory):
-        for file in files:
-            if file == "data.csv":
-                file_path = os.path.join(root, file)
-                df = pd.read_csv(file_path)
-                
-                # Reorder columns to match the header order
-                df = df.reindex(columns=headers_order)
-                
-                concatenated_data.append(df)
+        # Traverse the main data directory
+        for root, dirs, files in os.walk(directory):
+            for file in files:
+                if file == "data.csv":
+                    file_path = os.path.join(root, file)
+                    df = pd.read_csv(file_path)
+                    
+                    # Reorder columns to match the header order
+                    df = df.reindex(columns=headers_order)
+                    
+                    concatenated_data.append(df)
 
-    if concatenated_data:
-        combined_df = pd.concat(concatenated_data, ignore_index=True)
-        return combined_df.to_dict(orient='records')  # Convert to list of dictionaries for easier display
-    return []
+        if concatenated_data:
+            combined_df = pd.concat(concatenated_data, ignore_index=True)
+            return combined_df.to_dict(orient='records')  # Convert to list of dictionaries for easier display
+        return []
+    except Exception as e:
+        print(f"Error concatenating CSV files: {e}")
+        return []
 
 
 def load_data_from_csv():

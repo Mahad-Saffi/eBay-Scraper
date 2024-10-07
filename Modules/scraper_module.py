@@ -41,12 +41,7 @@ class Scraper(QObject):
         service = Service('C:/chromedriver-win64/chromedriver.exe')
         options = webdriver.ChromeOptions()
         options.add_argument("--headless=new")  # Using the newer headless mode
-        options.add_argument("--disable-gpu")  # Disable GPU acceleration to avoid related issues
-        options.add_argument("--no-sandbox")  # Bypass OS security model
-        options.add_argument("--disable-dev-shm-usage")  # Overcome limited resource problems
-        options.add_argument("--disable-popup-blocking")  # Disable popup blocking
         options.add_argument("--window-size=800,800")  # Set a fixed window size for consistency
-        options.add_argument("--disable-notifications")  # Disable notifications
         self.driver = webdriver.Chrome(service=service, options=options)
         
         

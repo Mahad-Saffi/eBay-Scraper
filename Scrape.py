@@ -153,7 +153,7 @@ class ScraperUI(QMainWindow):
         # Get the item name, URL, and max items from input fields
         item_name = self.item_input.text().replace(" ", "+")
         item_url = self.url_input.text()
-        max_items = int(self.max_items_input.text()) if self.max_items_input.text().isdigit() else 25000
+        max_items = int(self.max_items_input.text()) if self.max_items_input.text().isdigit() else var.DEFAULT_MAX_ITEMS
 
         if not item_name and not item_url:
             self.status_label.setText("Status: Please enter item name")
@@ -263,12 +263,23 @@ class ScraperUI(QMainWindow):
                 self.table.setItem(row_idx, col_idx, QTableWidgetItem(str(row_data.get(header, ""))))
 
     def on_display_data_button_clicked(self):
-        data = hf.load_data_from_csv()
-        if data:
+        # Displaying the data in seperate thread
+        self.status_label.setText("Status: Loading data...")
+        threading.Thread(target=self.run_display_data).start()
+
+    def run_display_data(self):
+        try:
+            data = hf.load_data_from_csv()
+
+            if not data:
+                self.update_status_signal.emit("Status: No data found in existing CSV files")
+                return
+            
             self.display_data_signal.emit(data)
-            self.display_data(data)
-        else:
-            self.status_label.setText("Status: No data found in existing CSV files")
+            self.update_status_signal.emit("Status: Data loaded successfully")
+        except Exception as e:
+            self.update_status_signal.emit(f"Status: Error loading data: {e}")
+
 
 
 
@@ -276,30 +287,47 @@ class ScraperUI(QMainWindow):
 
     # ````````````````````````````````SORTING AND SEARCHING````````````````````````````
     def sort_data(self):
+        # Run the sorting in a separate thread
+        self.status_label.setText("Status: Sorting...")
+        threading.Thread(target=self.run_sort_data).start()
+
+    def run_sort_data(self):
         try:
             selected_algo = self.sort_algo_dropdown.currentText()
             selected_column = self.sort_column_dropdown.currentText()
-            
+
+            # Perform the sorting in a background thread
             sorting = SortingAlgorithms(hf.load_data_from_csv())
             sorted_data, total_time_taken = sorting.sort_data(selected_algo, selected_column)
+
+            # Update the UI in the main thread using signals
             self.time_taken_label.setText(f"Time Taken: {total_time_taken} milliseconds")
-            self.display_data(sorted_data)
+            self.display_data_signal.emit(sorted_data)
         except Exception as e:
-            self.status_label.setText(f"Status: Invalid column or sorting algorithm")
+            self.update_status_signal.emit(f"Status: Invalid column or sorting algorithm: {e}")
+
 
     def search_data(self):
+        # Run the search in a separate thread
+        self.status_label.setText("Status: Searching...")
+        threading.Thread(target=self.run_search_data).start()
+
+    def run_search_data(self):
         try:
             search_term = self.search_input.text()
             selected_algo = self.search_algo_dropdown.currentText().lower()
             selected_column = self.search_column_dropdown.currentText().lower()
             filter_option = self.filter_dropdown.currentText().lower()
-            
-            searching = SearchingAlgorithms(hf.load_data_from_csv())
 
+            # Perform the search in a background thread
+            searching = SearchingAlgorithms(hf.load_data_from_csv())
             result = searching.search_data(selected_column, search_term, selected_algo, filter_option)
-            self.display_data(result)
+
+            # Update the UI in the main thread using signals
+            self.display_data_signal.emit(result)
         except Exception as e:
-            self.status_label.setText(f"Status: Invalid search term or column or Data: {e}")
+            self.update_status_signal.emit(f"Status: Invalid search term or column: {e}")
+
 
 
 
