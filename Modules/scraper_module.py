@@ -33,14 +33,9 @@ class Scraper(QObject):
         self.lock = threading.Lock()
         self.driver = None
 
-        # Create the directory if it doesn't exist
-        if not os.path.exists(self.directory):
-            os.makedirs(self.directory)
-
     def initialize_driver(self):
         service = Service('C:/chromedriver-win64/chromedriver.exe')
         options = webdriver.ChromeOptions()
-        options.add_argument("--headless=new")  # Using the newer headless mode
         options.add_argument("--window-size=800,800")  # Set a fixed window size for consistency
         self.driver = webdriver.Chrome(service=service, options=options)
         
@@ -49,6 +44,12 @@ class Scraper(QObject):
         
         
     # ``````````````````````````````````SCRAPING````````````````````````````````````````````
+    
+    def initialize_directory(self):
+        # Create the directory if it doesn't exist
+        if not os.path.exists(self.directory):
+            os.makedirs(self.directory)
+    
     
     def save_page_html(self):
         try:
@@ -78,24 +79,25 @@ class Scraper(QObject):
         try:
             with open(f"{self.directory}/page_{page_no}.html", "r", encoding="utf-8") as file:
                 page_html = file.read()
+            
             soup = BeautifulSoup(page_html, "html.parser")
             elements = soup.select(".s-item.s-item__pl-on-bottom")
+            
             for element in elements:
                 title = element.select_one(".s-item__title").get_text(strip=True)
                 price = element.select_one(".s-item__price").get_text(strip=True)
                 
-                # Ensure parse_price is called correctly
-                upper_price, lower_price = hf.parse_price(price)
+                upper_price, lower_price = hf.parse_price(price) if isinstance(hf.parse_price(price), tuple) and all(isinstance(x, (int, float)) for x in hf.parse_price(price)) else (0, 0)
                 
                 link = element.select_one(".s-item__link")['href']
                 image_url = element.select_one('.s-item__image img')['src']
-                condition = element.select_one('.SECONDARY_INFO').get_text(strip=True) if element.select_one('.SECONDARY_INFO') else None
-                shipping = element.select_one('.s-item__shipping').get_text(strip=True) if element.select_one('.s-item__shipping') else None
-                location = element.select_one('.s-item__location').get_text(strip=True) if element.select_one('.s-item__location') else None
+                condition = element.select_one('.SECONDARY_INFO').get_text(strip=True) if element.select_one('.SECONDARY_INFO') else "Not Found"
+                shipping = element.select_one('.s-item__shipping').get_text(strip=True) if element.select_one('.s-item__shipping') else "Not Found"
+                location = element.select_one('.s-item__location').get_text(strip=True) if element.select_one('.s-item__location') else "Not Found"
                 
-                shipping = hf.classify_shipping(shipping) if shipping else None
+                shipping = hf.classify_shipping(shipping) if shipping else "Not Found"
                 
-                if shipping is None and location is None:
+                if shipping == "Not Found" and location == "Not Found":
                     continue
 
                 data.append({
@@ -108,18 +110,22 @@ class Scraper(QObject):
                     "shipping": shipping,
                     "location": location
                 })
+                
         except Exception as e:
             print(f"Error extracting data from page {page_no}: {e}")
             self.update_status_signal.emit(f"Error extracting data from page {page_no}: {e}")
+        
         return data
 
     def save_data_to_csv(self, data):
         output_file = f"{self.directory}/data.csv"
         df = pd.DataFrame(data)
+        
         if os.path.exists(output_file):
             df.to_csv(output_file, mode='a', index=False, header=False)  # Append data without header
         else:
             df.to_csv(output_file, index=False)  # Create new file if it doesn't exist
+            
         print("Data saved successfully!")
         self.update_status_signal.emit("Data saved successfully!")
 
@@ -127,14 +133,17 @@ class Scraper(QObject):
         for filename in os.listdir(self.directory):
             if filename.endswith(".html"):
                 os.remove(os.path.join(self.directory, filename))
+                
         print("HTML files deleted.")
 
     def scrape(self):
+        self.initialize_directory()
+        
         all_data = []
         while not self.stopped and self.total_items < self.max_items:
             with self.lock:
                 if self.paused:
-                    time.sleep(0.1)  # Reduce sleep time for responsiveness
+                    time.sleep(0.1)
                     continue
 
             items_fetched = self.save_page_html()
@@ -154,7 +163,7 @@ class Scraper(QObject):
             if self.total_items >= self.max_items:
                 break
 
-        self.delete_html_files()  # Ensure only called once at the end
+        self.delete_html_files()
         self.stop()
         if self.driver:
             self.driver.quit()

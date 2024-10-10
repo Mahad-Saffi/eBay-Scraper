@@ -15,6 +15,7 @@ def parse_price(price_text):
 
 # Formatting the shipping text
 def classify_shipping(shipping_text):
+    print(shipping_text)
     if "Free" in shipping_text:
         return "Free International Shipping"
     elif "estimate" in shipping_text:
@@ -25,9 +26,9 @@ def classify_shipping(shipping_text):
         match = re.search(r'\$(\d+\.\d+)', shipping_text)
         if match:
             return f"Fixed Shipping Cost: ${match.group(1)}"
-    return None
+    return "Not Found"
 
-# This fucntion gets item name from url
+# Function to get the item name from the url
 def get_item_name(url):
     match = re.search(r'_nkw=([^&]+)', url)
     
@@ -35,7 +36,7 @@ def get_item_name(url):
         return match.group(1)
     return None
 
-# This function takes the url and increaments the page number and return updated url
+# Function to get the page number from the url
 def increment_page_no(url):
     match = re.search(r'_pgn=(\d+)', url)
     
@@ -46,7 +47,7 @@ def increment_page_no(url):
     return None
 
 
-# This functions gets the data from data folder
+# Function to concatenate all CSV files in the data directory
 def concatenate_csv_files(directory):
     try:
         concatenated_data = []
@@ -67,7 +68,7 @@ def concatenate_csv_files(directory):
 
         if concatenated_data:
             combined_df = pd.concat(concatenated_data, ignore_index=True)
-            return combined_df.to_dict(orient='records')  # Convert to list of dictionaries for easier display
+            return combined_df.to_dict(orient='records')
         return []
     except Exception as e:
         print(f"Error concatenating CSV files: {e}")

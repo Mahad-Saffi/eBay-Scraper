@@ -26,7 +26,8 @@ class ScraperUI(QMainWindow):
         super().__init__()
         self.setWindowTitle("eBay Scraper")
         self.setWindowIcon(QIcon(var.ICON_PATH))
-        self.setGeometry(300, 300, 800, 800)
+        self.setGeometry(300, 300, 900, 900)
+        self.setMaximumSize(900, 900)
 
         # Initialize the scraper
         self.scraper = Scraper()
@@ -57,7 +58,7 @@ class ScraperUI(QMainWindow):
         self.resume_button = QPushButton("Resume Scraping")
         self.stop_button = QPushButton("Stop Scraping")
 
-        # Initially disable buttons except start
+        # Initially disable buttons except start button
         self.pause_button.setEnabled(False)
         self.resume_button.setEnabled(False)
         self.stop_button.setEnabled(False)
@@ -150,7 +151,6 @@ class ScraperUI(QMainWindow):
     def start_scraping(self):
         self.progress_bar.setValue(0)
         
-        # Get the item name, URL, and max items from input fields
         item_name = self.item_input.text().replace(" ", "+")
         item_url = self.url_input.text()
         max_items = int(self.max_items_input.text()) if self.max_items_input.text().isdigit() else var.DEFAULT_MAX_ITEMS
@@ -172,10 +172,8 @@ class ScraperUI(QMainWindow):
         self.scraper.update_button_signal.connect(self.update_button_signal.emit)
         self.scraper.update_status_signal.connect(self.update_status_signal.emit)
 
-        # Start the scraper in a separate thread using threading
         threading.Thread(target=self.run_scraper).start()
 
-        # Update UI components
         self.start_button.setEnabled(False)
         self.pause_button.setEnabled(True)
         self.stop_button.setEnabled(True)
@@ -244,26 +242,19 @@ class ScraperUI(QMainWindow):
             self.table.clearContents()
             return
 
-        # Define the desired column order
         column_order = [att.lower().replace(" ", "_") for att in var.ATTRIBUTES]
 
-        # Set the column count based on the number of desired columns
         self.table.setColumnCount(len(column_order))
 
-        # Set the headers in the QTableWidget
         self.table.setHorizontalHeaderLabels(column_order)
 
-        # Set the row count based on the data length
         self.table.setRowCount(len(data))
         
-        # Populate the table with data according to the defined column order
         for row_idx, row_data in enumerate(data):
             for col_idx, header in enumerate(column_order):
-                # Set each item in the corresponding row and column, default to an empty string if the key is missing
                 self.table.setItem(row_idx, col_idx, QTableWidgetItem(str(row_data.get(header, ""))))
 
     def on_display_data_button_clicked(self):
-        # Displaying the data in seperate thread
         self.status_label.setText("Status: Loading data...")
         threading.Thread(target=self.run_display_data).start()
 
@@ -272,13 +263,13 @@ class ScraperUI(QMainWindow):
             data = hf.load_data_from_csv()
 
             if not data:
-                self.update_status_signal.emit("Status: No data found in existing CSV files")
+                self.update_status_signal.emit("No data found in existing CSV files")
                 return
             
             self.display_data_signal.emit(data)
-            self.update_status_signal.emit("Status: Data loaded successfully")
+            self.update_status_signal.emit("Data loaded successfully")
         except Exception as e:
-            self.update_status_signal.emit(f"Status: Error loading data: {e}")
+            self.update_status_signal.emit(f"Error loading data: {e}")
 
 
 
@@ -287,28 +278,41 @@ class ScraperUI(QMainWindow):
 
     # ````````````````````````````````SORTING AND SEARCHING````````````````````````````
     def sort_data(self):
-        # Run the sorting in a separate thread
         self.status_label.setText("Status: Sorting...")
         threading.Thread(target=self.run_sort_data).start()
 
     def run_sort_data(self):
         try:
             selected_algo = self.sort_algo_dropdown.currentText()
+            
+            # If Radix sort is not already selected, remove all string columns from the dropdown and select the first numeric column
+            if var.CURRENT_SORTING_ALGORITHM != "radix_sort" and selected_algo.lower().replace(" ", "_") == "radix_sort":
+                # Remove all string columns from the dropdown
+                self.sort_column_dropdown.clear()
+                self.sort_column_dropdown.addItems([att for att in var.ATTRIBUTES if att not in var.STRING_ATTRIBUTES])
+                self.sort_column_dropdown.setCurrentIndex(0)
+                
+            if var.CURRENT_SORTING_ALGORITHM != "bucket_sort" and selected_algo.lower().replace(" ", "_") == "bucket_sort":
+                self.sort_column_dropdown.clear()
+                self.sort_column_dropdown.addItems([att for att in var.ATTRIBUTES if att not in var.STRING_ATTRIBUTES])
+                self.sort_column_dropdown.setCurrentIndex(0)
+                
+            # Else select the column from dropdown
             selected_column = self.sort_column_dropdown.currentText()
+            var.CURRENT_SORTING_ALGORITHM = selected_algo.lower().replace(" ", "_")
 
-            # Perform the sorting in a background thread
             sorting = SortingAlgorithms(hf.load_data_from_csv())
             sorted_data, total_time_taken = sorting.sort_data(selected_algo, selected_column)
 
-            # Update the UI in the main thread using signals
             self.time_taken_label.setText(f"Time Taken: {total_time_taken} milliseconds")
             self.display_data_signal.emit(sorted_data)
+            self.status_label.setText("Status: Sorted successfully")
         except Exception as e:
-            self.update_status_signal.emit(f"Status: Invalid column or sorting algorithm: {e}")
+            print("Error: ", e)
+            self.update_status_signal.emit(f"Invalid column or sorting algorithm: {e}")
 
 
     def search_data(self):
-        # Run the search in a separate thread
         self.status_label.setText("Status: Searching...")
         threading.Thread(target=self.run_search_data).start()
 
@@ -319,14 +323,13 @@ class ScraperUI(QMainWindow):
             selected_column = self.search_column_dropdown.currentText().lower()
             filter_option = self.filter_dropdown.currentText().lower()
 
-            # Perform the search in a background thread
             searching = SearchingAlgorithms(hf.load_data_from_csv())
             result = searching.search_data(selected_column, search_term, selected_algo, filter_option)
 
-            # Update the UI in the main thread using signals
             self.display_data_signal.emit(result)
         except Exception as e:
-            self.update_status_signal.emit(f"Status: Invalid search term or column: {e}")
+            print("Error: ", e)
+            self.update_status_signal.emit(f"Invalid search term or column: {e}")
 
 
 

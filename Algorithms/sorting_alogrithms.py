@@ -1,4 +1,5 @@
 from time import time
+import Modules.variables as var
 class SortingAlgorithms:
     def __init__(self, data):
         self.data = data
@@ -16,6 +17,7 @@ class SortingAlgorithms:
         total_time = ending_time - starting_time
         return self.data, total_time
 
+
     # Selection Sort
     def selection_sort(self, key):
         starting_time = time() * 1000
@@ -30,6 +32,7 @@ class SortingAlgorithms:
         
         total_time = ending_time - starting_time
         return self.data, total_time
+
 
     # Insertion Sort
     def insertion_sort(self, key):
@@ -46,38 +49,11 @@ class SortingAlgorithms:
         total_time = ending_time - starting_time
         return self.data, total_time
 
+
     # Merge Sort
     def merge_sort(self, key):
         starting_time = time() * 1000
-        if len(self.data) > 1:
-            mid = len(self.data) // 2
-            left_half = self.data[:mid]
-            right_half = self.data[mid:]
-
-            # Recursively split and sort
-            self.merge_sort_helper(left_half, key)
-            self.merge_sort_helper(right_half, key)
-
-            # Merge the sorted halves
-            i = j = k = 0
-            while i < len(left_half) and j < len(right_half):
-                if left_half[i][key] < right_half[j][key]:
-                    self.data[k] = left_half[i]
-                    i += 1
-                else:
-                    self.data[k] = right_half[j]
-                    j += 1
-                k += 1
-
-            while i < len(left_half):
-                self.data[k] = left_half[i]
-                i += 1
-                k += 1
-
-            while j < len(right_half):
-                self.data[k] = right_half[j]
-                j += 1
-                k += 1
+        self.merge_sort_helper(self.data, key)
         ending_time = time() * 1000
         
         total_time = ending_time - starting_time
@@ -89,7 +65,7 @@ class SortingAlgorithms:
             left_half = data[:mid]
             right_half = data[mid:]
 
-            # Recursively split and sort
+            # Recursively split and sort the left and right halves
             self.merge_sort_helper(left_half, key)
             self.merge_sort_helper(right_half, key)
 
@@ -114,6 +90,7 @@ class SortingAlgorithms:
                 j += 1
                 k += 1
 
+
     # Quick Sort
     def quick_sort(self, key):
         starting_time = time() * 1000
@@ -125,183 +102,216 @@ class SortingAlgorithms:
 
     def quick_sort_helper(self, low, high, key):
         if low < high:
+            # Get the index of the pivot element
             pi = self.partition(low, high, key)
 
+            # Recursively sort elements before and after the pivot
             self.quick_sort_helper(low, pi - 1, key)
             self.quick_sort_helper(pi + 1, high, key)
 
     def partition(self, low, high, key):
         pivot = self.data[high][key]
         i = low - 1
+        
         for j in range(low, high):
             if self.data[j][key] < pivot:
                 i += 1
                 self.data[i], self.data[j] = self.data[j], self.data[i]
+                
         self.data[i + 1], self.data[high] = self.data[high], self.data[i + 1]
+        
         return i + 1
 
+
     def counting_sort(self, key):
-        starting_time = time() * 1000
-        # Check if the data is numeric
-        if all(isinstance(item[key], (int, float)) for item in self.data):
-            # Handle numeric data
-            values = [int(item[key]) for item in self.data]  # Convert to int
-            max_val = max(values)  # Find the maximum numeric value
-            count = [0] * (max_val + 1)
-            output = [None] * len(self.data)
-
-            # Count occurrences of each value
-            for value in values:
-                count[value] += 1
-
-            # Update the count array to hold the actual position
-            for i in range(1, len(count)):
-                count[i] += count[i - 1]
-
-            # Build the output array
-            for i in reversed(range(len(values))):
-                output[count[values[i]] - 1] = self.data[i]
-                count[values[i]] -= 1
-
-        else:
-            # Handle string data (use the existing implementation for strings)
-            max_char = 256  # ASCII range
-            count = [0] * max_char
-            output = [None] * len(self.data)
-
-            # Count occurrences of each character (first char of each string)
-            for item in self.data:
-                count[ord(item[key][0])] += 1
-
-            # Update the count array to hold the actual position
-            for i in range(1, max_char):
-                count[i] += count[i - 1]
-
-            # Build the output array
-            for item in reversed(self.data):
-                char_index = ord(item[key][0])
-                output[count[char_index] - 1] = item
-                count[char_index] -= 1
-
-        # Copy the sorted values back to self.data
-        self.data[:] = output  # Update the original data
-        ending_time = time() * 1000
-        
-        total_time = ending_time - starting_time
-        return self.data, total_time
-
-    # Radix Sort
-    def radix_sort(self, key):
-        starting_time = time() * 1000
-        if all(isinstance(item[key], (int, float)) for item in self.data):
-            max_val = max(int(item[key]) for item in self.data)
-            exp = 1
-            while max_val // exp > 0:
-                self.counting_sort_radix(key, exp)
-                exp *= 10
-        else:
-            # For string data, use the existing radix sort logic
-            max_length = max(len(item[key]) for item in self.data)
-            for exp in range(max_length - 1, -1, -1):
-                self.counting_sort_radix(key, exp)
-        ending_time = time() * 1000
-        
-        total_time = ending_time - starting_time
-        return self.data, total_time
-
-    def counting_sort_radix(self, key, exp):
-        if all(isinstance(item[key], (int, float)) for item in self.data):
-            # Numeric data handling
-            n = len(self.data)
-            output = [None] * n
-            count = [0] * 10  # Base 10 for digits
-
-            for item in self.data:
-                index = (int(item[key]) // exp) % 10
-                count[index] += 1
-
-            for i in range(1, 10):
-                count[i] += count[i - 1]
-
-            for i in reversed(range(n)):
-                index = (int(self.data[i][key]) // exp) % 10
-                output[count[index] - 1] = self.data[i]
-                count[index] -= 1
-
-        else:
-            # String data handling (existing implementation)
-            n = len(self.data)
-            output = [None] * n
-            count = [0] * 256  # ASCII range
-
-            for item in self.data:
-                index = ord(item[key][exp]) if exp < len(item[key]) else 0
-                count[index] += 1
-
-            for i in range(1, 256):
-                count[i] += count[i - 1]
-
-            for i in reversed(range(n)):
-                index = ord(self.data[i][key][exp]) if exp < len(self.data[i][key]) else 0
-                output[count[index] - 1] = self.data[i]
-                count[index] -= 1
-
-        self.data[:] = output
-
-
-    def bucket_sort(self, key):
         starting_time = time() * 1000
         if not self.data:
             return []
 
-        if all(isinstance(item[key], (int, float)) for item in self.data):
-            # Numeric bucket sort
-            values = [int(item[key]) for item in self.data]
-            max_val = max(values)
-            bucket_count = len(self.data) // 10 + 1
-            buckets = [[] for _ in range(bucket_count)]
+        # Check if the key is in any attribute having string values
+        string_columns = [att.lower().replace(" ", "_") for att in var.STRING_ATTRIBUTES]
+        
+        if key in string_columns:
+            count = [0] * 26  # Array to count occurrences of each letter
+            length_of_output = 0
 
             for item in self.data:
-                index = int(item[key]) * bucket_count // (max_val + 1)
-                buckets[index].append(item)
+                if key == "location":
+                    item[key] = item[key].replace("from ", "")
+                
+                if key in item and item[key]:
+                    char = item[key][0]  # Get the first character to sort by
+                    
+                    # Get their values in the range 0-25
+                    if 'a' <= char <= 'z':  
+                        index = ord(char) - ord('a')
+                        count[index] += 1
+                        length_of_output += 1
+                    elif 'A' <= char <= 'Z':
+                        index = ord(char) - ord('A')
+                        count[index] += 1
+                        length_of_output += 1
 
-            sorted_data = []
-            for bucket in buckets:
-                sorted_data.extend(sorted(bucket, key=lambda x: int(x[key])))
+            for i in range(1, len(count)):
+                count[i] += count[i - 1]
+
+            output = [None] * length_of_output
+
+            for item in self.data:
+                if key in item and item[key]:
+                    char = item[key][0] 
+                    if 'a' <= char <= 'z':
+                        index = ord(char) - ord('a')
+                        output[count[index] - 1] = item
+                        count[index] -= 1
+                    elif 'A' <= char <= 'Z':
+                        index = ord(char) - ord('A')
+                        output[count[index] - 1] = item
+                        count[index] -= 1
+
+            # Add remaining items that don't start with a alphabet and concatenate with the sorted items
+            remaining_items = [item for item in self.data if not (key in item and (('a' <= item[key][0] <= 'z') or ('A' <= item[key][0] <= 'Z')))]
+            self.data = output + remaining_items
 
         else:
-            # String bucket sort (use the existing implementation for strings)
-            max_char = 256  # ASCII range
-            bucket_count = max_char
+            # Handling numbers
+            if all(isinstance(item[key], (int, float)) for item in self.data):
+                # Convert floats to integers for better sorting
+                for item in self.data:
+                    if key in item:
+                        item[key] = int(round(item[key]))
 
-            # Create buckets
-            buckets = [[] for _ in range(bucket_count)]
+                max_val = max(self.data, key=lambda x: x[key])[key]
+                min_val = min(self.data, key=lambda x: x[key])[key]
 
-            # Place items into buckets based on the first character of the key
+                # Calculate the range of elements
+                range_of_elements = int(max_val - min_val + 1)
+                count = [0] * range_of_elements
+                output = [None] * len(self.data)
+
+                for item in self.data:
+                    if key in item:
+                        count_index = int(item[key] - min_val)
+                        count[count_index] += 1
+
+                for i in range(1, len(count)):
+                    count[i] += count[i - 1]
+
+                for item in reversed(self.data):
+                    count_index = int(item[key] - min_val)
+                    output[count[count_index] - 1] = item
+                    count[count_index] -= 1
+
+                self.data = output
+
+        total_time = time() * 1000 - starting_time
+        return self.data, total_time
+
+
+
+    def counting_sort_radix(self, key, exp):
+        if not self.data:
+            return []
+        
+        # Handling numbers
+        if all(isinstance(item[key], (int, float)) for item in self.data if key in item):
+            count = [0] * 10  # Array to count occurrences of digits (0-9)
+            output = [None] * len(self.data)
+
             for item in self.data:
-                index = ord(item[key][0])
+                if key in item:
+                    if isinstance(item[key], (int, float)):
+                        digit = (int(item[key]) // exp) % 10
+                        count[digit] += 1
+
+            for i in range(1, len(count)):
+                count[i] += count[i - 1]
+
+            for item in reversed(self.data):
+                if key in item and isinstance(item[key], (int, float)):
+                    digit = (int(item[key]) // exp) % 10
+                    output[count[digit] - 1] = item
+                    count[digit] -= 1
+
+            self.data = output
+
+        return self.data
+
+
+    def radix_sort(self, key):
+        starting_time = time() * 1000
+        if not self.data:
+            return []
+
+        # Check if the key is in any item
+        if not any(key in item for item in self.data):
+            print(f"Warning: The key '{key}' is not present in any items.")
+            return self.data 
+    
+        numeric_items = [item for item in self.data if key in item and isinstance(item[key], (int, float))]
+        
+        for item in numeric_items:
+            item[key] = int(round(item[key]))
+        
+        if numeric_items: 
+            max_val = max(item[key] for item in numeric_items)
+            exp = 1
+            while max_val // exp > 0:
+                self.counting_sort_radix(key, exp)
+                exp *= 10
+                
+        ending_time = time() * 1000
+        total_time = ending_time - starting_time
+
+        return self.data, total_time 
+
+
+
+    def bucket_sort(self, key):
+        starting_time = time() * 1000
+        if not self.data: 
+            return []
+
+        if not all(isinstance(item[key], float) for item in self.data if key in item):
+            print("Warning: All items must have a float value for the selected key.")
+            return self.data, 0
+
+        # Create buckets
+        max_val = max(item[key] for item in self.data if key in item)
+        min_val = min(item[key] for item in self.data if key in item)
+        bucket_count = 10  
+        bucket_range = (max_val - min_val) / bucket_count
+        buckets = [[] for _ in range(bucket_count)]
+
+        for item in self.data:
+            if key in item:
+                if bucket_range == 0: 
+                    index = bucket_count - 1
+                else:
+                    index = int((item[key] - min_val) // bucket_range)
+                    index = min(index, bucket_count - 1)  
+                
                 buckets[index].append(item)
 
-            sorted_data = []
-            for bucket in buckets:
-                sorted_data.extend(sorted(bucket, key=lambda x: x[key]))
+        sorted_data = []
+        for bucket in buckets:
+            sorted_data.extend(sorted(bucket, key=lambda x: x[key]))
 
-        self.data[:] = sorted_data
+        self.data = sorted_data  
         ending_time = time() * 1000
         
         total_time = ending_time - starting_time
-        return self.data, total_time
+        
+        return self.data, total_time  
+
     
-    # Heap Sort
     def heap_sort(self, key):
         starting_time = time() * 1000
         n = len(self.data)
 
-        # Build a maxheap
         for i in range(n // 2 - 1, -1, -1):
             self.heapify(n, i, key)
 
-        # Extract elements one by one
         for i in range(n - 1, 0, -1):
             self.data[i], self.data[0] = self.data[0], self.data[i]  # Swap
             self.heapify(i, 0, key)
@@ -311,9 +321,9 @@ class SortingAlgorithms:
         return self.data, total_time
 
     def heapify(self, n, i, key):
-        largest = i  # Initialize largest as root
-        left = 2 * i + 1  # Left child
-        right = 2 * i + 2  # Right child
+        largest = i 
+        left = 2 * i + 1
+        right = 2 * i + 2 
 
         # Check if left child exists and is greater than root
         if left < n and self.data[left][key] > self.data[largest][key]:
@@ -327,9 +337,8 @@ class SortingAlgorithms:
         if largest != i:
             self.data[i], self.data[largest] = self.data[largest], self.data[i]
             self.heapify(n, largest, key)
-            
     
-    # Comb Sort
+    
     def comb_sort(self, key):
         starting_time = time() * 1000
         n = len(self.data)
@@ -355,6 +364,28 @@ class SortingAlgorithms:
         
         total_time = ending_time - starting_time
         return self.data, total_time
+    
+    
+    def shell_sort(self, key):
+        starting_time = time() * 1000
+        n = len(self.data)
+        gap = n // 2
+
+        while gap > 0:
+            for i in range(gap, n):
+                temp = self.data[i]
+                j = i
+                while j >= gap and self.data[j - gap][key] > temp[key]:
+                    self.data[j] = self.data[j - gap]
+                    j -= gap
+
+                self.data[j] = temp
+            gap //= 2  
+        ending_time = time() * 1000
+        
+        total_time = ending_time - starting_time
+        return self.data, total_time
+
 
 
 
@@ -363,11 +394,9 @@ class SortingAlgorithms:
     def sort_data(self, algo, column):
         if not self.data:
             return []
-
-        # Map column to internal representation (assuming data stores the attributes by their lower case keys)
+        
         key = column.lower().replace(" ", "_")
 
-        # Determine which algorithm to use
         if algo == "Bubble Sort":
             return self.bubble_sort(key)
         elif algo == "Selection Sort":
@@ -388,6 +417,7 @@ class SortingAlgorithms:
             return self.heap_sort(key)
         elif algo == "Comb Sort":
             return self.comb_sort(key)
+        elif algo == "Shell Sort":
+            return self.shell_sort(key)
         else:
-            # Default case or for other algorithms
             return self.data
