@@ -1,5 +1,5 @@
 from math import floor
-import sorting_alogrithms
+from Algorithms.sorting_alogrithms import SortingAlgorithms
 
 class SearchingAlgorithms:
     def __init__(self, data):
@@ -46,7 +46,8 @@ class SearchingAlgorithms:
 
 
     def binary_search(self, key, search_term, option="contains"):
-        sorting_alogrithms.quick_sort(self.data, key)
+        sorting = SortingAlgorithms(self.data)
+        sorting.quick_sort(key)
 
         low, high = 0, len(self.data) - 1
         results = []
@@ -60,7 +61,7 @@ class SearchingAlgorithms:
                     try:
                         search_term = type(value)(search_term)
                     except ValueError:
-                        low = mid + 1  
+                        low = mid + 1
                         continue
 
                 if isinstance(search_term, (int, float)):
@@ -122,9 +123,7 @@ class SearchingAlgorithms:
                     break
             else:
                 value_left = str(value_left)
-                if (option == "contains" and search_term in value_left) or \
-                (option == "starts with" and value_left.startswith(search_term)) or \
-                (option == "ends with" and value_left.endswith(search_term)):
+                if (option == "contains" and search_term in value_left) or (option == "starts with" and value_left.startswith(search_term)) or (option == "ends with" and value_left.endswith(search_term)):
                     results.append(self.data[left])
                 else:
                     break

@@ -31,7 +31,6 @@ def classify_shipping(shipping_text):
 # Function to get the item name from the url
 def get_item_name(url):
     match = re.search(r'_nkw=([^&]+)', url)
-    
     if match:
         return match.group(1)
     return None
