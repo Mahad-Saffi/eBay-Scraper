@@ -89,6 +89,8 @@ class SortingAlgorithms:
                 data[k] = right_half[j]
                 j += 1
                 k += 1
+    
+
 
 
     # Quick Sort
@@ -121,7 +123,7 @@ class SortingAlgorithms:
         self.data[i + 1], self.data[high] = self.data[high], self.data[i + 1]
         
         return i + 1
-
+     
 
     def counting_sort(self, key):
         starting_time = time() * 1000
